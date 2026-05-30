@@ -4,152 +4,218 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
-<meta name="apple-mobile-web-app-status-bar-style" content="default"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
 <meta name="apple-mobile-web-app-title" content="Card Scanner"/>
+<meta name="theme-color" content="#185FA5"/>
 <title>Card Scanner</title>
+<link rel="manifest" href="data:application/manifest+json,{%22name%22:%22Card%20Scanner%22,%22short_name%22:%22Card%20Scanner%22,%22start_url%22:%22.%22,%22display%22:%22standalone%22,%22background_color%22:%22%23185FA5%22,%22theme_color%22:%22%23185FA5%22,%22orientation%22:%22portrait%22}"/>
+<link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'><rect width='180' height='180' rx='40' fill='%23185FA5'/><text x='90' y='125' font-size='100' text-anchor='middle'>📇</text></svg>"/>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css"/>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.0.4/dist/tesseract.min.js"></script>
 <style>
 :root{
-  --bg:#f5f5f0;--surface:#fff;--surface2:#f0efe8;
-  --text:#111;--text2:#666;--text3:#999;
-  --border:rgba(0,0,0,.1);--border2:rgba(0,0,0,.2);
+  --bg:#f4f4ef;--surf:#fff;--surf2:#f0efe8;--surf3:#e5e4dc;
+  --txt:#111;--txt2:#555;--txt3:#999;
+  --bdr:rgba(0,0,0,.09);--bdr2:rgba(0,0,0,.18);
   --blue:#185FA5;--blue-bg:#E6F1FB;--blue-dk:#0C447C;
   --green:#1D9E75;--green-bg:#E1F5EE;
-  --red:#D85A30;--red-bg:#FAECE7;
-  --amber:#BA7517;--amber-bg:#FAEEDA;
+  --red:#C0392B;--red-bg:#FDEDEC;
+  --amber:#8a5e00;--amber-bg:#FEF3CD;
   --r:12px;--rl:16px;
+  --st:env(safe-area-inset-top,0px);
+  --sb:env(safe-area-inset-bottom,0px);
 }
-@media(prefers-color-scheme:dark){
-  :root{--bg:#1a1a1a;--surface:#242424;--surface2:#2e2e2e;--text:#f0f0f0;--text2:#aaa;--text3:#666;--border:rgba(255,255,255,.1);--border2:rgba(255,255,255,.2);--blue-bg:#0c2d4a;--blue-dk:#85B7EB;--green-bg:#0a2e20;--red-bg:#3a1a10;--amber-bg:#2e1e05;}
-}
+@media(prefers-color-scheme:dark){:root{
+  --bg:#161616;--surf:#1f1f1f;--surf2:#2a2a2a;--surf3:#333;
+  --txt:#efefef;--txt2:#aaa;--txt3:#666;
+  --bdr:rgba(255,255,255,.09);--bdr2:rgba(255,255,255,.2);
+  --blue-bg:#0a253d;--blue-dk:#7eb8f7;
+  --green-bg:#082519;--red-bg:#2c0a09;--amber-bg:#261800;
+}}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
-html,body{height:100%;overflow:hidden}
-body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Segoe UI',sans-serif;background:var(--bg);color:var(--text)}
+html,body{height:100%;overflow:hidden;overscroll-behavior:none}
+body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Segoe UI',sans-serif;background:var(--bg);color:var(--txt)}
 button{cursor:pointer;border:none;background:none;font-family:inherit;color:inherit}
-input,textarea{font-family:inherit;color:var(--text)}
-#app{display:flex;flex-direction:column;height:100dvh;max-width:480px;margin:0 auto}
-.hdr{padding:max(env(safe-area-inset-top),14px) 16px 10px;background:var(--surface);border-bottom:.5px solid var(--border);flex-shrink:0}
-.hdr h1{font-size:18px;font-weight:700;letter-spacing:-.4px}.hdr h1 i{color:var(--blue);margin-right:6px}
-.hdr p{font-size:11px;color:var(--text2);margin-top:1px}
-.tabs{display:flex;background:var(--surface);border-bottom:.5px solid var(--border);flex-shrink:0}
-.tab{flex:1;padding:10px;font-size:13px;font-weight:500;color:var(--text2);border-bottom:2px solid transparent;transition:all .15s;display:flex;align-items:center;justify-content:center;gap:5px}
-.tab.active{color:var(--blue);border-bottom-color:var(--blue)}
-.scroll{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px 14px calc(env(safe-area-inset-bottom,16px) + 14px)}
-.scan-opts{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
-.scan-opt{background:var(--surface);border:.5px solid var(--border);border-radius:var(--rl);padding:18px 12px;text-align:center;cursor:pointer;transition:border-color .15s,transform .1s}
-.scan-opt:active{transform:scale(.97)}.scan-opt:hover{border:1.5px solid var(--blue)}
-.scan-opt i{font-size:26px;color:var(--blue);display:block;margin-bottom:6px}
+input,textarea,select{font-family:inherit;color:var(--txt);font-size:16px}
+#app{display:flex;flex-direction:column;height:100dvh;max-width:500px;margin:0 auto}
+.hdr{padding:calc(var(--st) + 12px) 16px 10px;background:var(--surf);border-bottom:.5px solid var(--bdr);flex-shrink:0}
+.hdr-row{display:flex;align-items:center;justify-content:space-between}
+.hdr h1{font-size:18px;font-weight:700;letter-spacing:-.4px}
+.hdr h1 i{color:var(--blue);margin-right:6px}
+.hdr p{font-size:11px;color:var(--txt2);margin-top:1px}
+.tabs{display:flex;background:var(--surf);border-bottom:.5px solid var(--bdr);flex-shrink:0}
+.tab{flex:1;padding:10px 6px;font-size:13px;font-weight:500;color:var(--txt2);border-bottom:2.5px solid transparent;display:flex;align-items:center;justify-content:center;gap:5px;transition:all .15s}
+.tab.active{color:var(--blue);border-bottom-color:var(--blue);font-weight:600}
+.scroll{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px 14px calc(var(--sb) + 14px)}
+
+/* Key setup */
+.key-card{background:var(--surf);border:1px solid var(--bdr);border-radius:var(--rl);padding:16px;margin-bottom:14px}
+.key-card h2{font-size:14px;font-weight:700;margin-bottom:4px;display:flex;align-items:center;gap:6px}
+.key-card h2 i{color:var(--blue)}
+.key-card p{font-size:11px;color:var(--txt2);line-height:1.55;margin-bottom:10px}
+.key-row{display:flex;gap:8px}
+.key-input{flex:1;padding:9px 11px;border:1px solid var(--bdr);border-radius:9px;font-size:13px;background:var(--surf2);outline:none;transition:border-color .15s}
+.key-input:focus{border-color:var(--blue)}
+.key-status{font-size:11px;margin-top:6px;display:flex;align-items:center;gap:5px}
+.steps-box{background:var(--blue-bg);border-radius:var(--r);padding:12px 14px;font-size:11px;color:var(--blue-dk);line-height:1.7}
+.steps-box strong{display:block;margin-bottom:4px;font-size:12px}
+.steps-box a{color:var(--blue);font-weight:600}
+
+/* Scan options */
+.scan-opts{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+.scan-opt{background:var(--surf);border:1px solid var(--bdr);border-radius:var(--rl);padding:18px 12px;text-align:center;cursor:pointer;transition:all .15s;user-select:none}
+.scan-opt:active{transform:scale(.96);border-color:var(--blue)}
+.scan-opt i{font-size:28px;color:var(--blue);display:block;margin-bottom:7px}
 .scan-opt span{font-size:13px;font-weight:600;display:block}
-.scan-opt small{font-size:10px;color:var(--text2);margin-top:2px;display:block}
-.drop-zone{border:1.5px dashed var(--border2);border-radius:var(--rl);padding:26px 20px;text-align:center;background:var(--surface);cursor:pointer}
-.drop-zone i{font-size:30px;color:var(--blue);display:block;margin-bottom:8px}
-.drop-zone h2{font-size:14px;font-weight:600;margin-bottom:4px}.drop-zone p{font-size:11px;color:var(--text2)}
-.offline-badge{display:flex;align-items:center;gap:7px;background:var(--green-bg);border-radius:var(--r);padding:9px 12px;margin-bottom:12px;font-size:11px;color:var(--green);font-weight:500}
-.offline-badge i{font-size:15px;flex-shrink:0}
+.scan-opt small{font-size:10px;color:var(--txt2);margin-top:2px;display:block}
+.drop-zone{border:1.5px dashed var(--bdr2);border-radius:var(--rl);padding:24px 20px;text-align:center;background:var(--surf);cursor:pointer}
+.drop-zone:active{border-color:var(--blue)}
+.drop-zone i{font-size:28px;color:var(--blue);display:block;margin-bottom:8px}
+.drop-zone h2{font-size:14px;font-weight:600;margin-bottom:3px}
+.drop-zone p{font-size:11px;color:var(--txt2)}
+.free-badge{display:inline-flex;align-items:center;gap:5px;background:var(--green-bg);color:var(--green);font-size:10px;font-weight:700;padding:3px 9px;border-radius:20px;margin-bottom:10px}
+
+/* Camera */
 .cam-wrap{position:relative;background:#000;border-radius:var(--rl);overflow:hidden;margin-bottom:10px}
-#camVideo{width:100%;display:block;max-height:260px;object-fit:cover}
-#ovCanvas{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none}
-.edge-badge{position:absolute;top:10px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.6);color:#fff;font-size:11px;font-weight:500;padding:4px 12px;border-radius:20px;white-space:nowrap;z-index:5;transition:background .3s}
-.edge-badge.found{background:rgba(29,158,117,.85)}
-.prog-ring{position:absolute;bottom:14px;right:14px;z-index:5}
-.cam-bar{display:flex;align-items:center;background:#111;border-radius:0 0 var(--rl) var(--rl);padding:12px 16px}
-.shutter{width:58px;height:58px;border-radius:50%;background:#fff;border:3px solid rgba(255,255,255,.35);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:transform .1s}
-.shutter:active{transform:scale(.92)}.shutter.ready{background:#1DC88C}
-.cam-hint{flex:1;font-size:11px;color:rgba(255,255,255,.65);text-align:center;padding:0 8px}
-.cam-close{width:38px;height:38px;border-radius:50%;background:rgba(255,255,255,.15);display:flex;align-items:center;justify-content:center;color:#fff;font-size:16px;cursor:pointer}
-.preview-img{width:100%;border-radius:10px;display:block;margin-bottom:12px;border:.5px solid var(--border);max-height:200px;object-fit:cover}
-.proc-box{background:var(--blue-bg);border-radius:12px;padding:12px 14px;display:flex;align-items:center;gap:10px;margin-bottom:10px}
-.spinner{width:18px;height:18px;border:2px solid rgba(24,95,165,.3);border-top-color:var(--blue);border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0}
+#camVideo{width:100%;display:block;max-height:56vw;object-fit:cover}
+#ovCanvas{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.edge-badge{position:absolute;top:10px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.62);color:#fff;font-size:11px;font-weight:600;padding:4px 14px;border-radius:20px;white-space:nowrap;z-index:5;transition:background .3s}
+.edge-badge.found{background:rgba(29,158,117,.88)}
+.prog-ring{position:absolute;bottom:12px;right:12px;z-index:5}
+.cam-bar{display:flex;align-items:center;background:#0d0d0d;border-radius:0 0 var(--rl) var(--rl);padding:14px 16px;gap:10px}
+.shutter{width:60px;height:60px;border-radius:50%;background:#fff;border:3.5px solid rgba(255,255,255,.3);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .12s;flex-shrink:0}
+.shutter:active{transform:scale(.9)}.shutter.ready{background:#1DC88C;border-color:rgba(255,255,255,.5)}
+.cam-hint{flex:1;font-size:11px;color:rgba(255,255,255,.6);text-align:center}
+.cam-close{width:40px;height:40px;border-radius:50%;background:rgba(255,255,255,.12);display:flex;align-items:center;justify-content:center;color:#fff;font-size:17px;cursor:pointer;flex-shrink:0}
+
+/* Preview */
+#previewCanvas{width:100%;border-radius:10px;display:block;margin-bottom:12px;border:.5px solid var(--bdr);max-height:180px;object-fit:cover}
+.proc-box{background:var(--blue-bg);border-radius:12px;padding:13px 14px;display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.spinner{width:20px;height:20px;border:2.5px solid rgba(24,95,165,.25);border-top-color:var(--blue);border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0}
 @keyframes spin{to{transform:rotate(360deg)}}
-.ocr-progress{font-size:11px;color:var(--text2);margin-top:3px}
+.proc-title{font-size:13px;font-weight:600;color:var(--blue)}
+.proc-sub{font-size:11px;color:var(--txt2);margin-top:2px}
+.prog-bar{height:4px;background:var(--bdr);border-radius:2px;margin-top:6px;overflow:hidden}
+.prog-fill{height:100%;background:var(--blue);border-radius:2px;transition:width .4s;width:0%}
+
+/* Form */
 .sec-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
-.sec-hdr span{font-size:13px;font-weight:600}.sec-hdr small{font-size:10px;color:var(--text2)}
-.fgrp{margin-bottom:9px}
-.flbl{font-size:10px;font-weight:500;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px;display:flex;align-items:center;gap:4px}
-.finp{width:100%;padding:9px 11px;border:.5px solid var(--border);border-radius:8px;font-size:13px;background:var(--surface);outline:none;transition:border-color .15s}
-.finp:focus{border-color:var(--blue)}
-.err-box{background:var(--red-bg);border-radius:10px;padding:12px;font-size:12px;color:var(--red)}
-.tip-box{background:var(--amber-bg);border-radius:10px;padding:10px 12px;font-size:11px;color:var(--amber);margin-bottom:10px;line-height:1.5}
-.btn-p{background:var(--blue);color:#fff;border-radius:10px;padding:11px 18px;font-size:14px;font-weight:600;display:inline-flex;align-items:center;gap:6px;transition:opacity .15s}
-.btn-p:active{opacity:.8}
-.btn-s{background:var(--surface2);color:var(--text);border-radius:10px;padding:9px 14px;font-size:13px;font-weight:500;border:.5px solid var(--border);display:inline-flex;align-items:center;gap:5px;transition:opacity .15s}
+.sec-hdr span{font-size:13px;font-weight:700}
+.sec-hdr small{font-size:10px;color:var(--txt2)}
+.fgrp{margin-bottom:8px}
+.flbl{font-size:10px;font-weight:600;color:var(--txt2);text-transform:uppercase;letter-spacing:.6px;margin-bottom:3px;display:flex;align-items:center;gap:4px}
+.finp{width:100%;padding:9px 11px;border:1px solid var(--bdr);border-radius:9px;font-size:14px;background:var(--surf);outline:none;transition:border-color .15s;-webkit-appearance:none}
+.finp:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(24,95,165,.1)}
+.form-actions{display:flex;gap:8px;margin-top:12px;position:sticky;bottom:0;background:var(--bg);padding:10px 0 2px}
+.err-box{background:var(--red-bg);border-radius:10px;padding:12px;font-size:12px;color:var(--red);line-height:1.5}
+
+/* Buttons */
+.btn-p{background:var(--blue);color:#fff;border-radius:10px;padding:12px 18px;font-size:14px;font-weight:600;display:inline-flex;align-items:center;gap:6px;transition:opacity .15s;-webkit-appearance:none;white-space:nowrap}
+.btn-p:active{opacity:.78}
+.btn-s{background:var(--surf2);color:var(--txt);border-radius:10px;padding:10px 14px;font-size:13px;font-weight:500;border:1px solid var(--bdr);display:inline-flex;align-items:center;gap:5px;transition:opacity .15s;-webkit-appearance:none;white-space:nowrap}
 .btn-s:active{opacity:.7}
+.btn-g{background:var(--green);color:#fff;border-radius:10px;padding:10px 14px;font-size:13px;font-weight:600;display:inline-flex;align-items:center;gap:5px;-webkit-appearance:none}
+.btn-g:active{opacity:.78}
+
+/* Contacts */
 .exp-bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
-.cnt-badge{background:var(--surface2);border-radius:20px;padding:3px 10px;font-size:11px;color:var(--text2)}
-.srch-bar{display:flex;align-items:center;gap:8px;background:var(--surface);border:.5px solid var(--border);border-radius:10px;padding:8px 12px;margin-bottom:10px}
-.srch-bar i{color:var(--text3);font-size:14px}
-.srch-bar input{flex:1;border:none;outline:none;font-size:13px;background:transparent}
-.card{background:var(--surface);border:.5px solid var(--border);border-radius:var(--rl);padding:12px 14px;margin-bottom:9px;cursor:pointer;transition:border-color .15s}
-.card:active{border-color:var(--blue)}
+.cnt-pill{background:var(--surf2);border-radius:20px;padding:3px 11px;font-size:11px;color:var(--txt2);font-weight:500}
+.srch-bar{display:flex;align-items:center;gap:8px;background:var(--surf);border:1px solid var(--bdr);border-radius:11px;padding:8px 12px;margin-bottom:10px}
+.srch-bar i{color:var(--txt3);font-size:14px;flex-shrink:0}
+.srch-bar input{flex:1;border:none;outline:none;background:transparent;font-size:14px}
+.card{background:var(--surf);border:1px solid var(--bdr);border-radius:var(--rl);padding:12px 14px;margin-bottom:9px;cursor:pointer;user-select:none}
+.card:active{border-color:var(--blue);background:var(--blue-bg)}
 .c-hdr{display:flex;align-items:center;gap:10px;margin-bottom:4px}
-.av{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;flex-shrink:0}
-.c-name{font-size:14px;font-weight:600}.c-sub{font-size:11px;color:var(--text2);margin-top:1px}
-.c-det{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text2);margin-top:3px}
-.c-det i{font-size:12px;color:#378ADD}
+.av{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;flex-shrink:0}
+.c-name{font-size:14px;font-weight:600;line-height:1.2}
+.c-sub{font-size:11px;color:var(--txt2);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.c-det{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--txt2);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.c-det i{font-size:12px;color:#378ADD;flex-shrink:0}
 .empty{text-align:center;padding:40px 20px}
-.empty i{font-size:40px;color:var(--border2);display:block;margin-bottom:10px}
-.empty p{font-size:13px;color:var(--text2);line-height:1.5}
-.sheet-ov{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:100;display:flex;flex-direction:column;justify-content:flex-end}
-.sheet{background:var(--surface);border-radius:20px 20px 0 0;padding:16px 16px calc(env(safe-area-inset-bottom,16px) + 16px);max-height:88vh;overflow-y:auto;-webkit-overflow-scrolling:touch}
-.sh-handle{width:36px;height:4px;background:var(--border2);border-radius:2px;margin:0 auto 16px}
-.sh-av-row{display:flex;align-items:center;gap:12px;margin-bottom:16px}
-.sh-av{width:50px;height:50px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;flex-shrink:0}
-.sh-name{font-size:17px;font-weight:700}.sh-title{font-size:13px;color:var(--text2);margin-top:2px}
-.co-badge{display:inline-block;background:var(--blue-bg);color:var(--blue-dk);font-size:10px;font-weight:500;padding:2px 8px;border-radius:20px;margin-top:4px}
-.d-row{display:flex;align-items:flex-start;gap:10px;padding:9px 0;border-bottom:.5px solid var(--border)}
+.empty i{font-size:42px;color:var(--bdr2);display:block;margin-bottom:10px}
+.empty p{font-size:13px;color:var(--txt2);line-height:1.6}
+
+/* Sheet */
+.sheet-ov{position:fixed;inset:0;background:rgba(0,0,0,.52);z-index:100;display:flex;flex-direction:column;justify-content:flex-end;animation:fadeIn .2s ease}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+.sheet{background:var(--surf);border-radius:22px 22px 0 0;padding:16px 16px calc(var(--sb) + 20px);max-height:88dvh;overflow-y:auto;-webkit-overflow-scrolling:touch;animation:sheetUp .28s cubic-bezier(.32,1,.28,1)}
+@keyframes sheetUp{from{transform:translateY(60px);opacity:.5}to{transform:translateY(0);opacity:1}}
+.sh-handle{width:38px;height:4px;background:var(--bdr2);border-radius:2px;margin:0 auto 14px}
+.sh-top{display:flex;align-items:flex-start;gap:12px;margin-bottom:16px}
+.sh-av{width:52px;height:52px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;flex-shrink:0}
+.sh-name{font-size:17px;font-weight:700;line-height:1.2}
+.sh-role{font-size:13px;color:var(--txt2);margin-top:2px}
+.co-badge{display:inline-flex;align-items:center;background:var(--blue-bg);color:var(--blue-dk);font-size:10px;font-weight:600;padding:2px 9px;border-radius:20px;margin-top:5px}
+.sh-close{margin-left:auto;width:30px;height:30px;border-radius:50%;background:var(--surf2);display:flex;align-items:center;justify-content:center;font-size:14px;color:var(--txt2);flex-shrink:0;cursor:pointer}
+.d-row{display:flex;align-items:flex-start;gap:11px;padding:9px 0;border-bottom:.5px solid var(--bdr)}
 .d-row:last-of-type{border-bottom:none}
-.d-icon{width:30px;height:30px;border-radius:8px;background:var(--surface2);display:flex;align-items:center;justify-content:center;font-size:15px;color:var(--text2);flex-shrink:0}
-.d-lbl{font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:.4px}
-.d-val{font-size:13px;font-weight:500;margin-top:2px;word-break:break-word}
-.sh-acts{display:flex;gap:8px;margin-top:16px}
-.sh-act{flex:1;padding:10px 6px;border-radius:10px;font-size:11px;font-weight:600;background:var(--surface2);border:.5px solid var(--border);display:flex;flex-direction:column;align-items:center;gap:4px;transition:opacity .15s}
-.sh-act:active{opacity:.7}.sh-act i{font-size:18px;color:var(--blue)}.sh-act.danger i{color:var(--red)}
-.note-box{background:var(--surface2);border-radius:10px;padding:10px 12px;margin-top:10px;font-size:11px;color:var(--text2);line-height:1.5}
-.toast{position:fixed;bottom:calc(env(safe-area-inset-bottom,12px) + 12px);left:50%;transform:translateX(-50%);background:#1D9E75;color:#fff;padding:9px 20px;border-radius:22px;font-size:13px;font-weight:500;z-index:200;display:flex;align-items:center;gap:6px;white-space:nowrap;animation:slideUp .25s ease;pointer-events:none}
-@keyframes slideUp{from{opacity:0;transform:translateX(-50%) translateY(12px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
+.d-icon{width:32px;height:32px;border-radius:9px;background:var(--surf2);display:flex;align-items:center;justify-content:center;font-size:15px;color:var(--txt2);flex-shrink:0}
+.d-lbl{font-size:10px;color:var(--txt3);text-transform:uppercase;letter-spacing:.5px}
+.d-val{font-size:13px;font-weight:500;margin-top:2px;word-break:break-word;line-height:1.4}
+.sh-acts{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:16px}
+.sh-act{padding:11px 6px;border-radius:11px;font-size:11px;font-weight:600;background:var(--surf2);border:1px solid var(--bdr);display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer}
+.sh-act:active{opacity:.7;transform:scale(.97)}
+.sh-act i{font-size:20px;color:var(--blue)}
+.sh-act.danger i{color:var(--red)}
+.sh-act.success i{color:var(--green)}
+.note{background:var(--surf2);border-radius:10px;padding:10px 12px;margin-top:12px;font-size:11px;color:var(--txt2);line-height:1.55}
+
+/* Toast */
+.toast{position:fixed;bottom:calc(var(--sb) + 14px);left:50%;transform:translateX(-50%);color:#fff;padding:10px 20px;border-radius:24px;font-size:13px;font-weight:600;z-index:300;display:flex;align-items:center;gap:7px;white-space:nowrap;box-shadow:0 4px 24px rgba(0,0,0,.25);animation:toastIn .25s cubic-bezier(.32,1,.28,1);pointer-events:none}
+@keyframes toastIn{from{opacity:0;transform:translateX(-50%) translateY(14px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
 </style>
 </head>
 <body>
 <div id="app">
   <div class="hdr">
-    <h1><i class="ti ti-address-card"></i>Card Scanner</h1>
-    <p>100% offline — no account or internet needed</p>
+    <div class="hdr-row">
+      <div>
+        <h1><i class="ti ti-address-card"></i>Card Scanner</h1>
+        <p>Powered by Google Gemini · Free · No subscription</p>
+      </div>
+      <div id="statusDot" style="width:9px;height:9px;border-radius:50%;background:var(--green);flex-shrink:0"></div>
+    </div>
   </div>
   <div class="tabs">
-    <button class="tab active" id="tab-scan" onclick="switchTab('scan')"><i class="ti ti-scan"></i> Scan</button>
-    <button class="tab" id="tab-contacts" onclick="switchTab('contacts')"><i class="ti ti-users"></i> Contacts <span id="cntBadge"></span></button>
+    <button class="tab active" id="tab-scan" onclick="goTab('scan')"><i class="ti ti-scan"></i> Scan</button>
+    <button class="tab" id="tab-contacts" onclick="goTab('contacts')"><i class="ti ti-users"></i> Contacts <span id="cntBadge"></span></button>
+    <button class="tab" id="tab-settings" onclick="goTab('settings')"><i class="ti ti-settings"></i> Setup</button>
   </div>
 
-  <!-- SCAN -->
+  <!-- ═══ SCAN ═══ -->
   <div class="scroll" id="pane-scan">
-    <div class="offline-badge">
-      <i class="ti ti-wifi-off"></i>
-      <span>Works fully offline — OCR runs on your device using Tesseract.js</span>
+    <div id="noKeyWarning" style="display:none">
+      <div class="err-box" style="margin-bottom:12px;display:flex;align-items:flex-start;gap:8px">
+        <i class="ti ti-key" style="font-size:16px;flex-shrink:0;margin-top:1px"></i>
+        <div>
+          <strong>API key required</strong><br/>
+          Go to the <strong>Setup</strong> tab to enter your free Google Gemini API key. It takes 1 minute and is completely free.
+          <div style="margin-top:8px"><button class="btn-p" onclick="goTab('settings')" style="font-size:12px;padding:8px 14px"><i class="ti ti-settings"></i> Go to Setup</button></div>
+        </div>
+      </div>
     </div>
+
     <div id="scanHome">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+        <span class="free-badge"><i class="ti ti-sparkles"></i> AI-Powered · Free 15 scans/min</span>
+      </div>
       <div class="scan-opts">
         <div class="scan-opt" onclick="startCamera()">
           <i class="ti ti-camera-bolt"></i>
           <span>Live Camera</span>
           <small>Auto edge detect</small>
         </div>
-        <div class="scan-opt" onclick="document.getElementById('fileIn').click()">
+        <div class="scan-opt" onclick="fileIn.click()">
           <i class="ti ti-photo-up"></i>
           <span>Upload Photo</span>
           <small>From gallery</small>
         </div>
       </div>
       <input type="file" id="fileIn" accept="image/*" style="display:none" onchange="handleFile(event)"/>
-      <div class="drop-zone" onclick="document.getElementById('fileIn').click()">
+      <div class="drop-zone" onclick="fileIn.click()">
         <i class="ti ti-drag-drop"></i>
         <h2>Tap to pick a card image</h2>
-        <p>JPG, PNG, HEIC — any photo of a business card</p>
-      </div>
-      <div class="tip-box" style="margin-top:12px">
-        <i class="ti ti-bulb" style="margin-right:5px"></i>
-        <strong>Tips for best results:</strong> Use good lighting, hold the card flat, make sure all text is sharp and in focus. The first scan downloads the OCR language model (~10 MB, once only).
+        <p>JPG · PNG · HEIC · any business card photo</p>
       </div>
     </div>
 
@@ -160,114 +226,224 @@ input,textarea{font-family:inherit;color:var(--text)}
         <canvas id="ovCanvas"></canvas>
         <div class="edge-badge" id="edgeBadge">Searching for card…</div>
         <svg class="prog-ring" id="progRing" width="46" height="46" style="display:none">
-          <circle cx="23" cy="23" r="19" fill="none" stroke="rgba(255,255,255,.2)" stroke-width="3"/>
-          <circle id="progArc" cx="23" cy="23" r="19" fill="none" stroke="#1DC88C" stroke-width="3"
+          <circle cx="23" cy="23" r="19" fill="none" stroke="rgba(255,255,255,.2)" stroke-width="3.5"/>
+          <circle id="progArc" cx="23" cy="23" r="19" fill="none" stroke="#1DC88C" stroke-width="3.5"
             stroke-dasharray="119" stroke-dashoffset="119" stroke-linecap="round" transform="rotate(-90 23 23)"/>
         </svg>
       </div>
       <div class="cam-bar">
         <div class="cam-close" onclick="stopCamera()"><i class="ti ti-x"></i></div>
-        <div class="cam-hint" id="camHint">Hold card flat, fill the frame</div>
+        <div class="cam-hint" id="camHint">Hold card flat · fill the frame</div>
         <div class="shutter" id="shutterBtn" onclick="captureFrame()">
-          <i class="ti ti-camera" style="font-size:22px;color:#185FA5"></i>
+          <i class="ti ti-camera" id="shutterIcon" style="font-size:24px;color:#185FA5"></i>
         </div>
       </div>
     </div>
 
-    <!-- Preview + Edit -->
+    <!-- Preview + Form -->
     <div id="previewPane" style="display:none">
-      <canvas id="previewCanvas" class="preview-img"></canvas>
+      <canvas id="previewCanvas"></canvas>
       <div class="proc-box" id="procBox" style="display:none">
         <div class="spinner"></div>
-        <div>
-          <div style="font-size:13px;font-weight:600;color:var(--blue)" id="procTitle">Running OCR…</div>
-          <div class="ocr-progress" id="procSub">Extracting text from card</div>
+        <div style="flex:1">
+          <div class="proc-title" id="procTitle">Analyzing card…</div>
+          <div class="proc-sub" id="procSub">Sending to Gemini AI…</div>
+          <div class="prog-bar"><div class="prog-fill" id="progFill"></div></div>
         </div>
       </div>
       <div id="editForm" style="display:none">
-        <div class="sec-hdr"><span>Extracted details</span><small>Edit before saving</small></div>
+        <div class="sec-hdr">
+          <span><i class="ti ti-edit" style="margin-right:5px;color:var(--blue)"></i>Review &amp; Edit</span>
+          <small>Fix anything before saving</small>
+        </div>
         <div id="formFields"></div>
-        <div style="display:flex;gap:8px;margin-top:10px">
-          <button class="btn-p" style="flex:1" onclick="saveContact()"><i class="ti ti-check"></i> Save Contact</button>
-          <button class="btn-s" onclick="resetScan()"><i class="ti ti-x"></i></button>
+        <div class="form-actions">
+          <button class="btn-p" style="flex:1" onclick="saveContact()"><i class="ti ti-device-floppy"></i> Save Contact</button>
+          <button class="btn-s" onclick="resetScan()"><i class="ti ti-trash"></i></button>
         </div>
       </div>
-      <div class="err-box" id="errBox" style="display:none"></div>
+      <div class="err-box" id="errBox" style="display:none">
+        <i class="ti ti-alert-circle" style="margin-right:6px"></i>
+        <span id="errMsg"></span>
+        <div style="margin-top:10px;display:flex;gap:8px">
+          <button class="btn-s" onclick="resetScan()"><i class="ti ti-arrow-left"></i> Try again</button>
+        </div>
+      </div>
     </div>
   </div>
 
-  <!-- CONTACTS -->
+  <!-- ═══ CONTACTS ═══ -->
   <div class="scroll" id="pane-contacts" style="display:none">
     <div class="exp-bar">
-      <span class="cnt-badge" id="contactCount">0 contacts</span>
+      <span class="cnt-pill" id="cntLabel">0 contacts</span>
       <button class="btn-s" onclick="exportExcel()"><i class="ti ti-table-export" style="font-size:13px"></i> Export Excel</button>
     </div>
     <div class="srch-bar" id="srchBar" style="display:none">
       <i class="ti ti-search"></i>
-      <input id="srchInput" placeholder="Search name, company, email…" oninput="renderContacts()"/>
-      <button id="clrBtn" onclick="document.getElementById('srchInput').value='';renderContacts()" style="color:var(--text3);display:none"><i class="ti ti-x"></i></button>
+      <input id="srchInput" placeholder="Search name, company, email…" oninput="renderList()" autocorrect="off" autocapitalize="off"/>
+      <button id="clrBtn" onclick="srchInput.value='';renderList()" style="color:var(--txt3);font-size:15px;display:none"><i class="ti ti-x"></i></button>
     </div>
     <div id="contactsList"></div>
   </div>
+
+  <!-- ═══ SETTINGS ═══ -->
+  <div class="scroll" id="pane-settings" style="display:none">
+    <div class="key-card">
+      <h2><i class="ti ti-brand-google"></i> Google Gemini API Key</h2>
+      <p>Gemini is Google's free AI — it reads business cards accurately. The free tier gives you <strong>15 scans per minute</strong> and requires no credit card.</p>
+      <div class="key-row">
+        <input class="key-input" type="password" id="apiKeyInput" placeholder="Paste your API key here…" autocomplete="off" autocorrect="off"/>
+        <button class="btn-p" onclick="saveKey()" style="padding:9px 16px;font-size:13px">Save</button>
+      </div>
+      <div class="key-status" id="keyStatus"></div>
+    </div>
+
+    <div class="steps-box">
+      <strong>📋 How to get your FREE Gemini API key (2 minutes):</strong>
+      1. Go to <a href="https://aistudio.google.com/app/apikey" target="_blank">aistudio.google.com/app/apikey</a><br/>
+      2. Sign in with any Google account (Gmail)<br/>
+      3. Click <strong>"Create API key"</strong><br/>
+      4. Copy the key and paste it above<br/>
+      5. Tap <strong>Save</strong> — you're done!<br/><br/>
+      <strong>✅ Free tier:</strong> 15 requests/min · 1,500 requests/day · No credit card · No expiry
+    </div>
+
+    <div style="margin-top:14px;background:var(--surf);border:1px solid var(--bdr);border-radius:var(--rl);padding:14px">
+      <div style="font-size:13px;font-weight:700;margin-bottom:8px"><i class="ti ti-shield-lock" style="margin-right:5px;color:var(--blue)"></i>Privacy</div>
+      <div style="font-size:11px;color:var(--txt2);line-height:1.65">
+        • Your API key is stored <strong>only on this device</strong> in localStorage<br/>
+        • Card images are sent to Google Gemini only for OCR extraction<br/>
+        • No data is stored on any server — only your device<br/>
+        • Contacts are saved locally in your browser only<br/>
+        • You can clear all data anytime using the button below
+      </div>
+      <div style="margin-top:12px;display:flex;gap:8px">
+        <button class="btn-s" onclick="clearAllData()" style="font-size:12px;color:var(--red);border-color:var(--red)"><i class="ti ti-trash"></i> Clear all data</button>
+      </div>
+    </div>
+
+    <div style="margin-top:14px;background:var(--surf);border:1px solid var(--bdr);border-radius:var(--rl);padding:14px">
+      <div style="font-size:13px;font-weight:700;margin-bottom:8px"><i class="ti ti-device-mobile" style="margin-right:5px;color:var(--blue)"></i>Install as iPhone App</div>
+      <div style="font-size:11px;color:var(--txt2);line-height:1.65">
+        1. Open this page in <strong>Safari</strong><br/>
+        2. Tap the <strong>Share</strong> button (box with arrow)<br/>
+        3. Tap <strong>"Add to Home Screen"</strong><br/>
+        4. Tap <strong>Add</strong> — done!<br/><br/>
+        The app will work offline after first load (contacts, editing, export — all offline). Only scanning needs internet.
+      </div>
+    </div>
+  </div>
+
 </div>
 
 <!-- Sheet -->
-<div class="sheet-ov" id="sheetOv" style="display:none" onclick="closeSheet(event)">
+<div class="sheet-ov" id="sheetOv" style="display:none" onclick="maybeClose(event)">
   <div class="sheet" id="sheetBody"></div>
 </div>
 <div class="toast" id="toast" style="display:none"></div>
 
 <script>
-const STORE='bizcard_offline_v1';
+/* ─── CONFIG & STATE ─── */
+const STORE='bizcard_gemini_v1';
+const KEY_STORE='bizcard_gemini_key';
 const FIELDS=[
-  {k:'name',l:'Full name',i:'user'},{k:'title',l:'Job title',i:'briefcase'},
-  {k:'company',l:'Company',i:'building'},{k:'email',l:'Email',i:'mail'},
-  {k:'phone',l:'Phone',i:'phone'},{k:'phone2',l:'Mobile / phone 2',i:'device-mobile'},
-  {k:'website',l:'Website',i:'world'},{k:'address',l:'Address',i:'map-pin'},
-  {k:'linkedin',l:'LinkedIn',i:'brand-linkedin'},{k:'notes',l:'Notes',i:'notes'},
+  {k:'name',    l:'Full name',        i:'user',         cap:'words'},
+  {k:'title',   l:'Job title',        i:'briefcase',    cap:'words'},
+  {k:'company', l:'Company',          i:'building',     cap:'words'},
+  {k:'email',   l:'Email',            i:'mail',         cap:'none'},
+  {k:'phone',   l:'Phone',            i:'phone',        cap:'none'},
+  {k:'phone2',  l:'Mobile / Phone 2', i:'device-mobile',cap:'none'},
+  {k:'website', l:'Website',          i:'world',        cap:'none'},
+  {k:'address', l:'Address',          i:'map-pin',      cap:'sentences'},
+  {k:'linkedin',l:'LinkedIn',         i:'brand-linkedin',cap:'none'},
+  {k:'notes',   l:'Notes',            i:'notes',        cap:'sentences'},
 ];
-const AVCOLS=[['#E6F1FB','#0C447C'],['#E1F5EE','#085041'],['#FAEEDA','#633806'],['#FBEAF0','#72243E'],['#EEEDFE','#3C3489'],['#FAECE7','#712B13']];
+const AVC=[
+  ['#E6F1FB','#0C447C'],['#E1F5EE','#085041'],['#FAEEDA','#633806'],
+  ['#FBEAF0','#72243E'],['#EEEDFE','#3C3489'],['#FAECE7','#712B13'],
+  ['#FFF3E0','#7A4500'],['#F3E5F5','#5B2683'],
+];
 
-let contacts=[], stream=null, edgeTick=null, autoTimer=null, autoProg=0, detectedQuad=null, editContact=null;
+let contacts=[], apiKey='', stream=null, edgeTick=null, autoTimer=null, autoProg=0, detectedQuad=null, editContact=null;
 
-function load(){try{contacts=JSON.parse(localStorage.getItem(STORE)||'[]')}catch{contacts=[]}}
-function persist(){localStorage.setItem(STORE,JSON.stringify(contacts))}
-function initials(n){return n?(n.split(' ').slice(0,2).map(w=>w[0]||'').join('').toUpperCase()):'?'}
-function avcol(n){return n?AVCOLS[n.charCodeAt(0)%AVCOLS.length]:AVCOLS[0]}
+function loadAll(){
+  try{contacts=JSON.parse(localStorage.getItem(STORE)||'[]')}catch{contacts=[]}
+  apiKey=localStorage.getItem(KEY_STORE)||'';
+  if(apiKey){
+    document.getElementById('apiKeyInput').value=apiKey;
+    setKeyStatus(true);
+  }
+}
+function saveData(){localStorage.setItem(STORE,JSON.stringify(contacts))}
+function initials(n){return n?n.trim().split(/\s+/).slice(0,2).map(w=>w[0]||'').join('').toUpperCase():'?'}
+function avcol(n){return n?AVC[Math.abs([...n].reduce((a,c)=>a+c.charCodeAt(0),0))%AVC.length]:AVC[0]}
+function esc(s){return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
 
-function showToast(msg,col='#1D9E75'){
+/* ─── TOAST ─── */
+let tid;
+function toast(msg,col='#1D9E75',icon='ti-check'){
   const t=document.getElementById('toast');
   t.style.display='flex';t.style.background=col;
-  t.innerHTML=`<i class="ti ti-check"></i> ${msg}`;
-  clearTimeout(t._t);t._t=setTimeout(()=>t.style.display='none',2500);
+  t.innerHTML=`<i class="ti ${icon}"></i> ${msg}`;
+  clearTimeout(tid);tid=setTimeout(()=>t.style.display='none',2800);
 }
 
-function switchTab(tab){
-  ['scan','contacts'].forEach(t=>{
+/* ─── API KEY ─── */
+function saveKey(){
+  const v=document.getElementById('apiKeyInput').value.trim();
+  if(!v){toast('Please paste your API key first','#C0392B','ti-alert-circle');return;}
+  apiKey=v;
+  localStorage.setItem(KEY_STORE,v);
+  setKeyStatus(true);
+  toast('API key saved! You can now scan cards.');
+  checkKeyWarning();
+}
+function setKeyStatus(ok){
+  const el=document.getElementById('keyStatus');
+  el.innerHTML=ok
+    ?`<i class="ti ti-circle-check" style="color:var(--green)"></i> <span style="color:var(--green);font-weight:600">Key saved — ready to scan!</span>`
+    :`<span style="color:var(--txt3)">No key saved yet</span>`;
+}
+function checkKeyWarning(){
+  document.getElementById('noKeyWarning').style.display=apiKey?'none':'';
+}
+function clearAllData(){
+  if(!confirm('Delete all contacts and settings?'))return;
+  contacts=[];localStorage.removeItem(STORE);localStorage.removeItem(KEY_STORE);
+  apiKey='';document.getElementById('apiKeyInput').value='';
+  setKeyStatus(false);updateCount();renderList();
+  toast('All data cleared','#555','ti-trash');
+}
+
+/* ─── TABS ─── */
+function goTab(tab){
+  ['scan','contacts','settings'].forEach(t=>{
     document.getElementById('tab-'+t).classList.toggle('active',t===tab);
     document.getElementById('pane-'+t).style.display=t===tab?'':'none';
   });
-  if(tab==='contacts'){updateCount();renderContacts();}
+  if(tab==='contacts'){updateCount();renderList();}
+  if(tab==='scan'){checkKeyWarning();}
 }
-
 function updateCount(){
   const n=contacts.length;
   document.getElementById('cntBadge').textContent=n?` (${n})`:'';
-  document.getElementById('contactCount').textContent=`${n} ${n===1?'contact':'contacts'}`;
+  document.getElementById('cntLabel').textContent=`${n} ${n===1?'contact':'contacts'}`;
   document.getElementById('srchBar').style.display=n>0?'flex':'none';
 }
 
-/* ---------- CAMERA + EDGE DETECTION ---------- */
+/* ─── CAMERA + EDGE DETECTION ─── */
 async function startCamera(){
+  if(!apiKey){goTab('settings');toast('Set your API key first','#8a5e00','ti-key');return;}
   document.getElementById('scanHome').style.display='none';
   document.getElementById('cameraPane').style.display='';
   try{
-    stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment',width:{ideal:1280},height:{ideal:720}},audio:false});
+    stream=await navigator.mediaDevices.getUserMedia({
+      video:{facingMode:{ideal:'environment'},width:{ideal:1920},height:{ideal:1080}},audio:false
+    });
     const v=document.getElementById('camVideo');
-    v.srcObject=stream;
-    v.onloadedmetadata=()=>startEdge();
+    v.srcObject=stream;v.onloadedmetadata=()=>startEdge();
   }catch(e){
-    showToast('Camera unavailable','#D85A30');
+    toast('Camera unavailable — use Upload instead','#C0392B','ti-alert-circle');
     stopCamera();
   }
 }
@@ -279,15 +455,13 @@ function stopCamera(){
   const ov=document.getElementById('ovCanvas');
   ov.getContext('2d').clearRect(0,0,ov.width,ov.height);
 }
-function startEdge(){edgeTick=setInterval(detectEdges,130)}
+function startEdge(){edgeTick=setInterval(detectEdges,120)}
 function detectEdges(){
-  const v=document.getElementById('camVideo');
-  if(!v.videoWidth)return;
+  const v=document.getElementById('camVideo');if(!v.videoWidth)return;
   const W=v.videoWidth,H=v.videoHeight;
   const tmp=document.createElement('canvas');tmp.width=W;tmp.height=H;
-  const tc=tmp.getContext('2d');tc.drawImage(v,0,0,W,H);
-  const id=tc.getImageData(0,0,W,H);
-  const quad=findQuad(id,W,H);
+  tmp.getContext('2d').drawImage(v,0,0,W,H);
+  const quad=findQuad(tmp.getContext('2d').getImageData(0,0,W,H),W,H);
   detectedQuad=quad;drawOverlay(quad);updateEdgeUI(quad);
 }
 function sobel(gray,W,H){
@@ -301,68 +475,52 @@ function sobel(gray,W,H){
 }
 function findQuad(imgData,W,H){
   const d=imgData.data,gray=new Uint8Array(W*H);
-  for(let i=0;i<W*H;i++){gray[i]=Math.round(.299*d[i*4]+.587*d[i*4+1]+.114*d[i*4+2]);}
+  for(let i=0;i<W*H;i++) gray[i]=Math.round(.299*d[i*4]+.587*d[i*4+1]+.114*d[i*4+2]);
   const edges=sobel(gray,W,H);
-  const BX=Math.floor(W*.08),BY=Math.floor(H*.08),EX=W-BX,EY=H-BY;
-  const CW=EX-BX,CH=EY-BY,cellW=Math.floor(CW/6),cellH=Math.floor(CH/4);
+  const bx=Math.floor(W*.07),by=Math.floor(H*.07),ex=W-bx,ey=H-by,cw=ex-bx,ch=ey-by;
   function scan(x0,y0,dx,dy,len,px,py,pr){
-    let best=-1,bestS=0;
+    let best=0,bStr=0;
     for(let p=-pr;p<=pr;p++){
       let s=0,c=0;
-      for(let i=0;i<len;i++){
-        const xi=Math.round(x0+i*dx+p*px),yi=Math.round(y0+i*dy+p*py);
-        if(xi>=0&&xi<W&&yi>=0&&yi<H){s+=edges[yi*W+xi];c++;}
-      }
-      const avg=c?s/c:0;if(avg>bestS){bestS=avg;best=p;}
+      for(let i=0;i<len;i++){const xi=Math.round(x0+i*dx+p*px),yi=Math.round(y0+i*dy+p*py);if(xi>=0&&xi<W&&yi>=0&&yi<H){s+=edges[yi*W+xi];c++;}}
+      const avg=c?s/c:0;if(avg>bStr){bStr=avg;best=p;}
     }
-    return{off:best,str:bestS};
+    return{off:best,str:bStr};
   }
-  const T=scan(BX,BY,1,0,CW,0,1,cellH),B=scan(BX,EY,1,0,CW,0,-1,cellH);
-  const L=scan(BX,BY,0,1,CH,1,0,cellW),R=scan(EX,BY,0,1,CH,-1,0,cellW);
-  if(T.str<18||B.str<18||L.str<18||R.str<18)return null;
-  const tY=BY+T.off,bY=EY+B.off,lX=BX+L.off,rX=EX+R.off;
-  const w=rX-lX,h=bY-tY,ar=w/h;
-  if(ar<1.2||ar>4.0||w<W*.3||h<H*.15)return null;
+  const cw6=Math.floor(cw/6),ch4=Math.floor(ch/4);
+  const T=scan(bx,by,1,0,cw,0,1,ch4),B=scan(bx,ey,1,0,cw,0,-1,ch4),L=scan(bx,by,0,1,ch,1,0,cw6),R=scan(ex,by,0,1,ch,-1,0,cw6);
+  if(T.str<16||B.str<16||L.str<16||R.str<16)return null;
+  const tY=by+T.off,bY=ey+B.off,lX=bx+L.off,rX=ex+R.off,w=rX-lX,h=bY-tY,ar=w/h;
+  if(ar<1.1||ar>4.2||w<W*.28||h<H*.12)return null;
   return [{x:lX/W,y:tY/H},{x:rX/W,y:tY/H},{x:rX/W,y:bY/H},{x:lX/W,y:bY/H}];
 }
 function drawOverlay(quad){
   const v=document.getElementById('camVideo'),ov=document.getElementById('ovCanvas');
-  const dpr=window.devicePixelRatio||1;
+  const dpr=Math.min(window.devicePixelRatio||1,2);
   ov.width=v.clientWidth*dpr;ov.height=v.clientHeight*dpr;
-  ov.style.width=v.clientWidth+'px';ov.style.height=v.clientHeight+'px';
+  ov.style.width='100%';ov.style.height='100%';
   const ctx=ov.getContext('2d'),sw=ov.width,sh=ov.height;
   ctx.clearRect(0,0,sw,sh);
   if(!quad){
-    ctx.strokeStyle='rgba(255,255,255,.25)';ctx.lineWidth=1.5;ctx.setLineDash([8,6]);
-    const pw=sw*.72,ph=pw*.56,px=(sw-pw)/2,py=(sh-ph)/2;
+    ctx.strokeStyle='rgba(255,255,255,.22)';ctx.lineWidth=1.5;ctx.setLineDash([10,7]);
+    const pw=sw*.74,ph=pw*.57,px=(sw-pw)/2,py=(sh-ph)/2;
     ctx.strokeRect(px,py,pw,ph);ctx.setLineDash([]);return;
   }
   const pts=quad.map(p=>({x:p.x*sw,y:p.y*sh}));
-  ctx.beginPath();ctx.moveTo(pts[0].x,pts[0].y);
-  for(let i=1;i<4;i++)ctx.lineTo(pts[i].x,pts[i].y);
-  ctx.closePath();
-  ctx.strokeStyle='rgba(29,200,140,.9)';ctx.lineWidth=2.5;ctx.setLineDash([]);ctx.stroke();
-  ctx.fillStyle='rgba(29,200,140,.07)';ctx.fill();
-  pts.forEach(p=>{ctx.beginPath();ctx.arc(p.x,p.y,6,0,Math.PI*2);ctx.fillStyle='#1DC88C';ctx.fill();});
+  ctx.beginPath();ctx.moveTo(pts[0].x,pts[0].y);pts.slice(1).forEach(p=>ctx.lineTo(p.x,p.y));ctx.closePath();
+  ctx.strokeStyle='rgba(29,210,148,.95)';ctx.lineWidth=2.5;ctx.setLineDash([]);ctx.stroke();
+  ctx.fillStyle='rgba(29,210,148,.07)';ctx.fill();
+  pts.forEach(p=>{ctx.beginPath();ctx.arc(p.x,p.y,7,0,Math.PI*2);ctx.fillStyle='#1DC894';ctx.fill();ctx.strokeStyle='rgba(255,255,255,.7)';ctx.lineWidth=1.5;ctx.stroke();});
 }
 function updateEdgeUI(quad){
-  const badge=document.getElementById('edgeBadge'),btn=document.getElementById('shutterBtn'),hint=document.getElementById('camHint');
-  if(quad){
-    badge.textContent='Card detected — hold steady';badge.className='edge-badge found';
-    btn.classList.add('ready');hint.textContent='Auto-capturing in 2s…';scheduleAuto();
-  }else{
-    badge.textContent='Searching for card…';badge.className='edge-badge';
-    btn.classList.remove('ready');hint.textContent='Hold card flat, fill the frame';cancelAuto();
-  }
+  const badge=document.getElementById('edgeBadge'),btn=document.getElementById('shutterBtn'),hint=document.getElementById('camHint'),icon=document.getElementById('shutterIcon');
+  if(quad){badge.textContent='✓ Card detected';badge.className='edge-badge found';btn.classList.add('ready');icon.style.color='#fff';hint.textContent='Auto-capturing in 2s…';scheduleAuto();}
+  else{badge.textContent='Searching for card…';badge.className='edge-badge';btn.classList.remove('ready');icon.style.color='#185FA5';hint.textContent='Hold card flat · fill the frame';cancelAuto();}
 }
 function scheduleAuto(){
-  if(autoTimer)return;autoProg=0;
-  document.getElementById('progRing').style.display='';
+  if(autoTimer)return;autoProg=0;document.getElementById('progRing').style.display='';
   const arc=document.getElementById('progArc'),steps=40,ms=2000/steps;
-  autoTimer=setInterval(()=>{
-    autoProg++;arc.style.strokeDashoffset=119-(119*autoProg/steps);
-    if(autoProg>=steps){cancelAuto();if(detectedQuad)captureFrame();}
-  },ms);
+  autoTimer=setInterval(()=>{autoProg++;arc.style.strokeDashoffset=119-(119*autoProg/steps);if(autoProg>=steps){cancelAuto();if(detectedQuad)captureFrame();}},ms);
 }
 function cancelAuto(){
   clearInterval(autoTimer);autoTimer=null;autoProg=0;
@@ -375,33 +533,30 @@ function captureFrame(){
   const cap=document.createElement('canvas');cap.width=W;cap.height=H;
   cap.getContext('2d').drawImage(v,0,0,W,H);
   const dataUrl=detectedQuad?perspCrop(cap,detectedQuad,W,H):cap.toDataURL('image/jpeg',.92);
-  stopCamera();showPreview(dataUrl);runOCR(dataUrl);
+  stopCamera();showPreview(dataUrl);callGemini(dataUrl);
 }
 function perspCrop(src,quad,W,H){
   const pts=quad.map(p=>({x:p.x*W,y:p.y*H}));
   const oW=Math.round(Math.hypot(pts[1].x-pts[0].x,pts[1].y-pts[0].y));
   const oH=Math.round(Math.hypot(pts[3].x-pts[0].x,pts[3].y-pts[0].y));
   const dst=document.createElement('canvas');dst.width=oW;dst.height=oH;
-  const dc=dst.getContext('2d'),sc=src.getContext('2d'),id=sc.getImageData(0,0,W,H);
+  const dc=dst.getContext('2d'),id=src.getContext('2d').getImageData(0,0,W,H);
   for(let dy=0;dy<oH;dy++) for(let dx=0;dx<oW;dx++){
     const u=dx/oW,v=dy/oH;
     const sx=(1-u)*(1-v)*pts[0].x+u*(1-v)*pts[1].x+u*v*pts[2].x+(1-u)*v*pts[3].x;
     const sy=(1-u)*(1-v)*pts[0].y+u*(1-v)*pts[1].y+u*v*pts[2].y+(1-u)*v*pts[3].y;
-    const xi=Math.round(sx),yi=Math.round(sy);
-    if(xi>=0&&xi<W&&yi>=0&&yi<H){
-      const si=(yi*W+xi)*4;
-      dc.fillStyle=`rgba(${id.data[si]},${id.data[si+1]},${id.data[si+2]},1)`;
-      dc.fillRect(dx,dy,1,1);
-    }
+    const xi=Math.min(Math.max(Math.round(sx),0),W-1),yi=Math.min(Math.max(Math.round(sy),0),H-1);
+    const si=(yi*W+xi)*4;dc.fillStyle=`rgba(${id.data[si]},${id.data[si+1]},${id.data[si+2]},1)`;dc.fillRect(dx,dy,1,1);
   }
   return dst.toDataURL('image/jpeg',.92);
 }
 
-/* ---------- FILE UPLOAD ---------- */
+/* ─── FILE UPLOAD ─── */
 function handleFile(e){
+  if(!apiKey){goTab('settings');toast('Set your API key first','#8a5e00','ti-key');return;}
   const file=e.target.files[0];if(!file)return;e.target.value='';
   const reader=new FileReader();
-  reader.onload=ev=>{showPreview(ev.target.result);runOCR(ev.target.result);};
+  reader.onload=ev=>{showPreview(ev.target.result);callGemini(ev.target.result);};
   reader.readAsDataURL(file);
 }
 function showPreview(dataUrl){
@@ -410,10 +565,11 @@ function showPreview(dataUrl){
   document.getElementById('procBox').style.display='flex';
   document.getElementById('editForm').style.display='none';
   document.getElementById('errBox').style.display='none';
+  document.getElementById('progFill').style.width='0%';
   const c=document.getElementById('previewCanvas');
   const img=new Image();
   img.onload=()=>{
-    const mW=360,mH=220;let w=img.width,h=img.height;
+    const mW=420,mH=210;let w=img.width,h=img.height;
     if(w>mW){h=h*mW/w;w=mW;}if(h>mH){w=w*mH/h;h=mH;}
     c.width=Math.round(w);c.height=Math.round(h);
     c.getContext('2d').drawImage(img,0,0,c.width,c.height);
@@ -421,146 +577,90 @@ function showPreview(dataUrl){
   img.src=dataUrl;
 }
 
-/* ---------- TESSERACT OCR (fully local) ---------- */
-async function runOCR(dataUrl){
-  document.getElementById('procTitle').textContent='Running OCR…';
-  document.getElementById('procSub').textContent='Loading language model (first time ~10 MB)';
+/* ─── GEMINI AI CALL ─── */
+async function callGemini(dataUrl){
+  document.getElementById('procTitle').textContent='Analyzing with Gemini AI…';
+  document.getElementById('procSub').textContent='Reading card details…';
+  // Animate progress bar
+  let prog=0;
+  const progInt=setInterval(()=>{prog=Math.min(prog+3,88);document.getElementById('progFill').style.width=prog+'%';},200);
   try{
-    const worker=await Tesseract.createWorker('eng',1,{
-      logger:m=>{
-        if(m.status==='recognizing text'){
-          const pct=Math.round((m.progress||0)*100);
-          document.getElementById('procSub').textContent=`Recognizing text… ${pct}%`;
-        } else if(m.status==='loading tesseract core'){
-          document.getElementById('procSub').textContent='Loading OCR engine…';
-        } else if(m.status==='initializing tesseract'){
-          document.getElementById('procSub').textContent='Initializing…';
-        } else if(m.status==='loading language traineddata'){
-          document.getElementById('procSub').textContent='Downloading language model (once only)…';
-        } else if(m.status==='initializing api'){
-          document.getElementById('procSub').textContent='Starting OCR…';
-        }
+    const base64=dataUrl.split(',')[1];
+    const mimeType=dataUrl.match(/data:([^;]+)/)[1];
+    const prompt=`You are a business card OCR expert. Extract ALL contact information from this business card image with high accuracy.
+
+Return ONLY a valid JSON object with exactly these fields (use empty string "" for any field not found):
+{
+  "name": "full name of the person",
+  "title": "job title or designation",
+  "company": "company or organization name",
+  "email": "email address",
+  "phone": "primary phone number with country code if shown",
+  "phone2": "secondary/mobile phone number",
+  "website": "website URL",
+  "address": "full address on one line",
+  "linkedin": "linkedin profile URL or username",
+  "notes": "any other relevant info like fax, social handles, tagline"
+}
+
+Important: Return ONLY the JSON object. No markdown, no explanation, no code blocks.`;
+
+    const resp=await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
+      {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({
+          contents:[{parts:[
+            {inline_data:{mime_type:mimeType,data:base64}},
+            {text:prompt}
+          ]}],
+          generationConfig:{temperature:0.1,maxOutputTokens:512}
+        })
       }
-    });
-    await worker.setParameters({tessedit_pageseg_mode:6});
-    const result=await worker.recognize(dataUrl);
-    await worker.terminate();
-    const rawText=result.data.text;
-    const parsed=parseBusinessCard(rawText);
+    );
+    clearInterval(progInt);
+    document.getElementById('progFill').style.width='100%';
+    if(!resp.ok){
+      const err=await resp.json().catch(()=>({}));
+      const msg=err?.error?.message||`API error ${resp.status}`;
+      if(resp.status===400&&msg.includes('API_KEY')){throw new Error('Invalid API key. Please check your key in Setup tab.');}
+      if(resp.status===429){throw new Error('Rate limit reached. Wait a moment and try again.');}
+      throw new Error(msg);
+    }
+    const data=await resp.json();
+    const text=data?.candidates?.[0]?.content?.parts?.[0]?.text||'';
+    const clean=text.replace(/```json|```/g,'').trim();
+    const parsed=JSON.parse(clean);
     editContact={...parsed,id:Date.now()};
     renderForm(editContact);
     document.getElementById('procBox').style.display='none';
     document.getElementById('editForm').style.display='';
-  }catch(e){
+  }catch(err){
+    clearInterval(progInt);
     document.getElementById('procBox').style.display='none';
-    const eb=document.getElementById('errBox');
-    eb.style.display='';
-    eb.innerHTML=`<i class="ti ti-alert-circle" style="margin-right:5px"></i>OCR failed. Try a sharper, well-lit photo.<div style="margin-top:8px"><button class="btn-s" onclick="resetScan()">Try again</button></div>`;
+    document.getElementById('errBox').style.display='';
+    document.getElementById('errMsg').textContent=err.message||'Something went wrong. Try again.';
   }
 }
 
-/* ---------- SMART PARSER ---------- */
-function parseBusinessCard(text){
-  const lines=text.split('\n').map(l=>l.trim()).filter(l=>l.length>1);
-  const result={name:'',title:'',company:'',email:'',phone:'',phone2:'',website:'',address:'',linkedin:'',notes:''};
-
-  // Email
-  const emailRx=/[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}/g;
-  const emails=text.match(emailRx)||[];
-  if(emails[0])result.email=emails[0];
-
-  // Phone — international, brackets, dots, dashes
-  const phoneRx=/(?:\+?[\d]{1,3}[\s\-.]?)?(?:\([\d]{2,4}\)[\s\-.]?)?[\d]{2,4}[\s\-.][\d]{3,4}[\s\-.][\d]{3,4}(?:[\s\-.]?(?:ext|x|#)[\s\-.]?[\d]{1,5})?/gi;
-  const phones=(text.match(phoneRx)||[]).map(p=>p.trim()).filter(p=>p.replace(/\D/g,'').length>=7);
-  if(phones[0])result.phone=phones[0];
-  if(phones[1])result.phone2=phones[1];
-
-  // Website
-  const webRx=/(?:https?:\/\/)?(?:www\.)?[a-zA-Z0-9\-]+\.[a-zA-Z]{2,}(?:\/[^\s]*)*/g;
-  const webs=(text.match(webRx)||[]).filter(w=>!w.includes('@')&&w.length>5);
-  if(webs[0])result.website=webs[0].startsWith('http')?webs[0]:'https://'+webs[0];
-
-  // LinkedIn
-  const liRx=/(?:linkedin\.com\/in\/|linkedin:?\s*)([a-zA-Z0-9\-]+)/i;
-  const liM=text.match(liRx);
-  if(liM)result.linkedin='linkedin.com/in/'+liM[1];
-
-  // Remove already-found values from lines for cleaner name/title/company parsing
-  const usedPatterns=[result.email,result.phone,result.phone2,result.website].filter(Boolean);
-  const cleanLines=lines.filter(l=>{
-    const lo=l.toLowerCase();
-    if(usedPatterns.some(p=>lo.includes(p.toLowerCase())))return false;
-    if(l.match(phoneRx))return false;
-    if(l.match(emailRx))return false;
-    return true;
-  });
-
-  // Address — lines with numbers + street keywords
-  const addrKw=/\b(?:street|st|avenue|ave|road|rd|blvd|boulevard|lane|ln|drive|dr|court|ct|way|place|pl|floor|fl|suite|ste|building|bldg|nagar|colony|layout|district|city|state|zip|pincode|po box)\b/i;
-  const addrLines=[];
-  const remainLines=[];
-  cleanLines.forEach(l=>{
-    if(addrKw.test(l)||(l.match(/^\d/)&&l.length>6)){addrLines.push(l);}
-    else remainLines.push(l);
-  });
-  if(addrLines.length)result.address=addrLines.join(', ');
-
-  // Title keywords
-  const titleKw=/\b(?:ceo|cto|coo|cfo|founder|co-founder|director|manager|engineer|developer|designer|analyst|consultant|president|vp|vice president|head|lead|senior|junior|associate|officer|executive|partner|principal|architect|specialist|coordinator|advisor|professor|doctor|dr|md|phd)\b/i;
-
-  // Name — usually the largest/first prominent line, not a title/email/phone
-  let nameIdx=-1;
-  for(let i=0;i<remainLines.length;i++){
-    const l=remainLines[i];
-    if(l.length<3||l.length>50)continue;
-    if(l.match(/\d{3,}/))continue;
-    if(l.match(emailRx)||l.match(phoneRx))continue;
-    if(l.split(' ').length>=2&&l.split(' ').length<=5&&l.match(/^[A-Z][a-zA-Z\s.\-']+$/)){
-      result.name=l;nameIdx=i;break;
-    }
-  }
-  // Fallback: first short clean line
-  if(!result.name){
-    for(let i=0;i<remainLines.length;i++){
-      const l=remainLines[i];
-      if(l.length>2&&l.length<50&&!l.match(/\d{3,}/)){result.name=l;nameIdx=i;break;}
-    }
-  }
-
-  // Title — first line matching title keywords (not name)
-  for(let i=0;i<remainLines.length;i++){
-    if(i===nameIdx)continue;
-    if(titleKw.test(remainLines[i])&&remainLines[i].length<80){result.title=remainLines[i];break;}
-  }
-
-  // Company — remaining prominent lines (not name, title, address)
-  const usedIdx=new Set([nameIdx]);
-  if(result.title){const ti=remainLines.indexOf(result.title);if(ti>=0)usedIdx.add(ti);}
-  for(let i=0;i<remainLines.length;i++){
-    if(usedIdx.has(i))continue;
-    const l=remainLines[i];
-    if(l.length>2&&l.length<60&&!l.match(/\d{5,}/)&&!titleKw.test(l)){
-      if(!result.company){result.company=l;}
-      break;
-    }
-  }
-
-  return result;
-}
-
-/* ---------- FORM ---------- */
+/* ─── FORM ─── */
 function renderForm(c){
   document.getElementById('formFields').innerHTML=FIELDS.map(f=>`
     <div class="fgrp">
       <div class="flbl"><i class="ti ti-${f.i}"></i> ${f.l}</div>
-      <input class="finp" data-key="${f.k}" value="${(c[f.k]||'').replace(/"/g,'&quot;').replace(/</g,'&lt;')}" placeholder="${f.l}…"/>
+      <input class="finp" data-key="${f.k}" value="${esc(c[f.k]||'')}" placeholder="Enter ${f.l.toLowerCase()}…"
+        autocorrect="off" autocapitalize="${f.cap}" inputmode="${f.k.includes('phone')?'tel':'text'}"/>
     </div>`).join('');
 }
 function saveContact(){
-  document.querySelectorAll('#formFields .finp').forEach(inp=>{if(editContact)editContact[inp.dataset.key]=inp.value});
+  document.querySelectorAll('#formFields .finp').forEach(inp=>{if(editContact)editContact[inp.dataset.key]=inp.value.trim();});
+  if(!editContact.name&&!editContact.email&&!editContact.phone){
+    toast('Please fill at least name, email or phone','#C0392B','ti-alert-circle');return;
+  }
   const idx=contacts.findIndex(c=>c.id===editContact.id);
-  if(idx>=0)contacts[idx]=editContact; else contacts.unshift(editContact);
-  persist();updateCount();showToast('Contact saved!');resetScan();switchTab('contacts');
+  if(idx>=0)contacts[idx]={...editContact};else contacts.unshift({...editContact});
+  saveData();updateCount();toast('Contact saved!');resetScan();goTab('contacts');
 }
 function resetScan(){
   editContact=null;detectedQuad=null;
@@ -569,93 +669,150 @@ function resetScan(){
   document.getElementById('editForm').style.display='none';
   document.getElementById('errBox').style.display='none';
   document.getElementById('procBox').style.display='none';
+  const c=document.getElementById('previewCanvas');c.getContext('2d').clearRect(0,0,c.width,c.height);c.height=1;
 }
 
-/* ---------- CONTACTS LIST ---------- */
-function renderContacts(){
+/* ─── CONTACTS LIST ─── */
+function renderList(){
   const q=(document.getElementById('srchInput').value||'').toLowerCase();
   document.getElementById('clrBtn').style.display=q?'':'none';
-  const f=q?contacts.filter(c=>(c.name||'').toLowerCase().includes(q)||(c.company||'').toLowerCase().includes(q)||(c.email||'').toLowerCase().includes(q)):contacts;
+  const f=q?contacts.filter(c=>(c.name||'').toLowerCase().includes(q)||(c.company||'').toLowerCase().includes(q)||(c.email||'').toLowerCase().includes(q)||(c.phone||'').includes(q)):contacts;
   if(!contacts.length){
-    document.getElementById('contactsList').innerHTML=`<div class="empty"><i class="ti ti-address-book-off"></i><p>No contacts yet.<br/>Scan your first business card!</p><button class="btn-p" style="margin-top:14px" onclick="switchTab('scan')"><i class="ti ti-camera"></i> Scan a card</button></div>`;
+    document.getElementById('contactsList').innerHTML=`<div class="empty"><i class="ti ti-address-book-off"></i><p>No contacts yet.<br/>Scan your first business card!</p><button class="btn-p" style="margin-top:16px" onclick="goTab('scan')"><i class="ti ti-camera"></i> Scan a card</button></div>`;
     return;
   }
-  if(!f.length){document.getElementById('contactsList').innerHTML=`<div class="empty"><i class="ti ti-search-off"></i><p>No results found.</p></div>`;return;}
+  if(!f.length){document.getElementById('contactsList').innerHTML=`<div class="empty"><i class="ti ti-search-off"></i><p>No contacts match your search.</p></div>`;return;}
   document.getElementById('contactsList').innerHTML=f.map(c=>{
     const col=avcol(c.name);
-    return `<div class="card" onclick="showSheet(${c.id})">
+    return `<div class="card" onclick="openSheet(${c.id})">
       <div class="c-hdr">
         <div class="av" style="background:${col[0]};color:${col[1]}">${initials(c.name)}</div>
         <div style="flex:1;min-width:0">
-          <div class="c-name">${c.name||'Unknown'}</div>
-          <div class="c-sub">${[c.title,c.company].filter(Boolean).join(' · ')}</div>
+          <div class="c-name">${esc(c.name)||'<span style="color:var(--txt3)">No name</span>'}</div>
+          <div class="c-sub">${esc([c.title,c.company].filter(Boolean).join(' · '))}</div>
         </div>
-        <i class="ti ti-chevron-right" style="font-size:15px;color:var(--text3)"></i>
+        <i class="ti ti-chevron-right" style="font-size:15px;color:var(--txt3)"></i>
       </div>
-      ${c.email?`<div class="c-det"><i class="ti ti-mail"></i>${c.email}</div>`:''}
-      ${c.phone?`<div class="c-det"><i class="ti ti-phone"></i>${c.phone}</div>`:''}
+      ${c.email?`<div class="c-det"><i class="ti ti-mail"></i>${esc(c.email)}</div>`:''}
+      ${c.phone?`<div class="c-det"><i class="ti ti-phone"></i>${esc(c.phone)}</div>`:''}
     </div>`;
   }).join('');
 }
 
-/* ---------- SHEET DETAIL ---------- */
-function showSheet(id){
+/* ─── CONTACT SHEET ─── */
+function openSheet(id){
   const c=contacts.find(x=>x.id===id);if(!c)return;
   const col=avcol(c.name);
   const df=[{k:'email',l:'Email',i:'mail'},{k:'phone',l:'Phone',i:'phone'},{k:'phone2',l:'Mobile',i:'device-mobile'},{k:'website',l:'Website',i:'world'},{k:'address',l:'Address',i:'map-pin'},{k:'linkedin',l:'LinkedIn',i:'brand-linkedin'},{k:'notes',l:'Notes',i:'notes'}].filter(f=>c[f.k]);
   document.getElementById('sheetBody').innerHTML=`
     <div class="sh-handle"></div>
-    <div class="sh-av-row">
+    <div class="sh-top">
       <div class="sh-av" style="background:${col[0]};color:${col[1]}">${initials(c.name)}</div>
-      <div>
-        <div class="sh-name">${c.name||'Unknown'}</div>
-        <div class="sh-title">${c.title||''}</div>
-        ${c.company?`<span class="co-badge">${c.company}</span>`:''}
+      <div style="flex:1;min-width:0">
+        <div class="sh-name">${esc(c.name)||'Unknown'}</div>
+        <div class="sh-role">${esc(c.title||'')}</div>
+        ${c.company?`<div><span class="co-badge"><i class="ti ti-building" style="margin-right:3px;font-size:10px"></i>${esc(c.company)}</span></div>`:''}
       </div>
+      <div class="sh-close" onclick="closeSheet()"><i class="ti ti-x"></i></div>
     </div>
-    ${df.map(f=>`<div class="d-row"><div class="d-icon"><i class="ti ti-${f.i}"></i></div><div><div class="d-lbl">${f.l}</div><div class="d-val">${c[f.k]}</div></div></div>`).join('')}
+    ${df.map(f=>`<div class="d-row"><div class="d-icon"><i class="ti ti-${f.i}"></i></div><div><div class="d-lbl">${f.l}</div><div class="d-val">${esc(c[f.k])}</div></div></div>`).join('')}
     <div class="sh-acts">
-      <button class="sh-act" onclick="addVCard(${id})"><i class="ti ti-user-plus"></i><span>Add to Contacts</span></button>
+      <button class="sh-act success" onclick="exportVCard(${id})"><i class="ti ti-user-plus"></i><span>Add to Phone</span></button>
       <button class="sh-act" onclick="editC(${id})"><i class="ti ti-edit"></i><span>Edit</span></button>
       <button class="sh-act danger" onclick="deleteC(${id})"><i class="ti ti-trash"></i><span>Delete</span></button>
     </div>
-    <div class="note-box"><i class="ti ti-info-circle" style="margin-right:4px"></i>"Add to Contacts" downloads a .vcf vCard — tap it to import directly into your iPhone Contacts app.</div>`;
+    <div class="note"><i class="ti ti-info-circle" style="margin-right:4px"></i><strong>Add to Phone</strong> downloads a .vcf vCard — tap it to save to your iPhone Contacts app. You can tap this as many times as you need.</div>`;
   document.getElementById('sheetOv').style.display='flex';
 }
-function closeSheet(e){if(e.target===document.getElementById('sheetOv'))document.getElementById('sheetOv').style.display='none';}
-function addVCard(id){
+function maybeClose(e){if(e.target===document.getElementById('sheetOv'))closeSheet();}
+function closeSheet(){document.getElementById('sheetOv').style.display='none';}
+
+/* ─── vCARD (repeatable every time) ─── */
+function exportVCard(id){
   const c=contacts.find(x=>x.id===id);if(!c)return;
-  const v=['BEGIN:VCARD','VERSION:3.0',`FN:${c.name||''}`,c.title?`TITLE:${c.title}`:'',c.company?`ORG:${c.company}`:'',c.email?`EMAIL:${c.email}`:'',c.phone?`TEL;TYPE=WORK:${c.phone}`:'',c.phone2?`TEL;TYPE=CELL:${c.phone2}`:'',c.address?`ADR;TYPE=WORK:;;${c.address};;;;`:'',c.website?`URL:${c.website}`:'','END:VCARD'].filter(Boolean).join('\n');
-  const blob=new Blob([v],{type:'text/vcard'});
-  const url=URL.createObjectURL(blob),a=document.createElement('a');
-  a.href=url;a.download=`${(c.name||'contact').replace(/\s+/g,'_')}.vcf`;a.click();URL.revokeObjectURL(url);
-  showToast('vCard downloaded!');
-}
-function editC(id){
-  const c=contacts.find(x=>x.id===id);if(!c)return;
-  editContact={...c};
-  document.getElementById('sheetOv').style.display='none';
-  switchTab('scan');
-  document.getElementById('scanHome').style.display='none';
-  document.getElementById('previewPane').style.display='';
-  const cv=document.getElementById('previewCanvas');cv.getContext('2d').clearRect(0,0,cv.width,cv.height);cv.height=1;
-  renderForm(editContact);document.getElementById('editForm').style.display='';
-}
-function deleteC(id){
-  contacts=contacts.filter(c=>c.id!==id);persist();updateCount();renderContacts();
-  document.getElementById('sheetOv').style.display='none';
-  showToast('Deleted','#888780');
-}
-function exportExcel(){
-  if(!contacts.length){showToast('No contacts to export','#D85A30');return;}
-  const rows=contacts.map(c=>({Name:c.name||'',Title:c.title||'',Company:c.company||'',Email:c.email||'',Phone:c.phone||'','Phone 2':c.phone2||'',Address:c.address||'',Website:c.website||'',LinkedIn:c.linkedin||'',Notes:c.notes||''}));
-  const ws=XLSX.utils.json_to_sheet(rows);
-  ws['!cols']=[14,18,18,24,14,14,28,20,24,20].map(w=>({wch:w}));
-  const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Contacts');
-  XLSX.writeFile(wb,'business_cards.xlsx');showToast('Excel exported!');
+  const v=[
+    'BEGIN:VCARD','VERSION:3.0',
+    `FN:${c.name||''}`,
+    `N:${(c.name||'').split(' ').slice(1).join(' ')};${(c.name||'').split(' ')[0]};;;`,
+    c.title   ?`TITLE:${c.title}`:'',
+    c.company ?`ORG:${c.company}`:'',
+    c.email   ?`EMAIL;TYPE=INTERNET,PREF:${c.email}`:'',
+    c.phone   ?`TEL;TYPE=WORK,VOICE:${c.phone}`:'',
+    c.phone2  ?`TEL;TYPE=CELL,VOICE:${c.phone2}`:'',
+    c.address ?`ADR;TYPE=WORK:;;${c.address};;;;`:'',
+    c.website ?`URL:${c.website}`:'',
+    c.linkedin?`X-SOCIALPROFILE;TYPE=linkedin:${c.linkedin}`:'',
+    c.notes   ?`NOTE:${c.notes}`:'',
+    `REV:${new Date().toISOString().replace(/[-:.]/g,'').slice(0,15)}Z`,
+    'END:VCARD'
+  ].filter(Boolean).join('\r\n');
+  const blob=new Blob([v],{type:'text/vcard;charset=utf-8'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;a.download=`${(c.name||'contact').replace(/[^a-zA-Z0-9]/g,'_')}.vcf`;
+  document.body.appendChild(a);a.click();
+  setTimeout(()=>{document.body.removeChild(a);URL.revokeObjectURL(url);},400);
+  toast('vCard downloaded — open it to import to Contacts');
 }
 
-load();updateCount();
+/* ─── EDIT ─── */
+function editC(id){
+  const c=contacts.find(x=>x.id===id);if(!c)return;
+  editContact={...c};closeSheet();goTab('scan');
+  document.getElementById('scanHome').style.display='none';
+  document.getElementById('previewPane').style.display='';
+  document.getElementById('procBox').style.display='none';
+  const cv=document.getElementById('previewCanvas');cv.getContext('2d').clearRect(0,0,cv.width,cv.height);cv.height=1;
+  renderForm(editContact);document.getElementById('editForm').style.display='';
+  document.getElementById('pane-scan').scrollTop=0;
+}
+
+/* ─── DELETE ─── */
+function deleteC(id){
+  if(!confirm('Delete this contact?'))return;
+  contacts=contacts.filter(c=>c.id!==id);
+  saveData();updateCount();renderList();closeSheet();
+  toast('Deleted','#555','ti-trash');
+}
+
+/* ─── EXCEL ─── */
+function exportExcel(){
+  if(!contacts.length){toast('No contacts to export','#C0392B','ti-alert-circle');return;}
+  const rows=contacts.map(c=>({'Name':c.name||'','Job Title':c.title||'','Company':c.company||'','Email':c.email||'','Phone':c.phone||'','Mobile':c.phone2||'','Address':c.address||'','Website':c.website||'','LinkedIn':c.linkedin||'','Notes':c.notes||''}));
+  const ws=XLSX.utils.json_to_sheet(rows);
+  ws['!cols']=[16,20,20,26,16,16,30,22,26,22].map(w=>({wch:w}));
+  const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Business Cards');
+  XLSX.writeFile(wb,`business_cards_${new Date().toISOString().slice(0,10)}.xlsx`);
+  toast('Excel exported!');
+}
+
+/* ─── INIT ─── */
+loadAll();updateCount();checkKeyWarning();
+window.addEventListener('online',()=>document.getElementById('statusDot').style.background='#1D9E75');
+window.addEventListener('offline',()=>document.getElementById('statusDot').style.background='#e67e22');
+</script>
+
+<!-- Service Worker for offline caching -->
+<script>
+if('serviceWorker' in navigator){
+  const sw=`
+const C='cardscanner-gemini-v1';
+const PRE=[
+  'https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css',
+  'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js',
+];
+self.addEventListener('install',e=>{e.waitUntil(caches.open(C).then(c=>c.addAll(PRE).catch(()=>{})));self.skipWaiting();});
+self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==C).map(k=>caches.delete(k)))));self.clients.claim();});
+self.addEventListener('fetch',e=>{
+  if(e.request.url.includes('generativelanguage.googleapis.com'))return;
+  e.respondWith(caches.match(e.request).then(r=>r||fetch(e.request).then(resp=>{
+    if(resp&&resp.status===200&&e.request.url.startsWith('http')){const cl=resp.clone();caches.open(C).then(c=>c.put(e.request,cl));}
+    return resp;
+  }).catch(()=>new Response('Offline',{status:503}))));
+});`;
+  const blob=new Blob([sw],{type:'application/javascript'});
+  navigator.serviceWorker.register(URL.createObjectURL(blob)).catch(()=>{});
+}
 </script>
 </body>
 </html>
